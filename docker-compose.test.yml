@@ -13,6 +13,7 @@ services:
       EMAIL_HANDLER_HOST: 127.0.0.1
       POSTFIX_FQDN: mail.mydomain.com
       RELAY_HOST: myisp.internet.com
+      STAGING: 'true'
 
   sut:
     image: alpine:latest
