@@ -21,6 +21,7 @@ Setting     | Description
 **LETSENCRYPT_EMAIL** | Email address used by Let's Encrypt, to send you expiry notices\*.
 **POSTFIX_FQDN** | Fully Qualified Domain Name of your Postfix instance (i.e., the MX server address you configured in your DNS zone for your **ALIASES_DEFAULT_DOMAIN**).
 **RELAY_HOST** | If your Postfix instance's IP address is blacklisted (e.g., because it is not a static address), you must use your Internet Service Provider's mail server as a relay, to be able to send emails to the outer world.
+**STAGING** | When set to true, uses Let's Encrypt staging server to obtain a test certificate.
 
 \* automatic renewal is managed with [Certbot](https://certbot.eff.org/) and shouldn't fail, unless you have reached Let's Encrypt [rate limits](https://letsencrypt.org/docs/rate-limits/)
 
