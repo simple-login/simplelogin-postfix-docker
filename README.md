@@ -1,10 +1,7 @@
-# Docker Image for SimpleLogin Postfix
+# Docker Image for SimpleLogin Postfix with certbot dns01 challenge
 
-No official Postfix image, tailor-made for [SimpleLogin](https://simplelogin.io/),
-currently exists.
-
-Let's fix that, by providing to the community something very lightweight,
-secure\* (with [Let's Encrypt](https://letsencrypt.org/) support) and simple to use 💖
+This is fork of [simplelogin-postfix-docker](https://github.com/simple-login/simplelogin-postfix-docker) that adds support for using DNS01 challenge with certbot.
+Currently this docker image only support using the certbot [cloudflare dns plugin](https://certbot-dns-cloudflare.readthedocs.io/en/stable/)
 
 **Compatibility:** this image has been tested in a production environment with SimpleLogin **3.4.0**
 
