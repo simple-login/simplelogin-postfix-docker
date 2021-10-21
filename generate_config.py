@@ -16,6 +16,8 @@ from jinja2.exceptions import UndefinedError
 # Certbot
 CERTBOT_CONFIG_DIR = Path('/etc/letsencrypt')
 CERTBOT_CONFIG_FILENAME = 'cli.ini'
+CERTBOT_DNS_CREDS_DIR = Path('/credentials')
+CERTBOT_DNS_CREDS_FILENAME = 'dns-creds.ini'
 
 # Let's Encrypt
 LETSENCRYPT_CONFIG_DIR = CERTBOT_CONFIG_DIR / 'live'
@@ -37,10 +39,24 @@ templates = Environment(
 
 
 def generate_certbot_config():
-    """Generate Certbot's configuration file."""
+    # Check the selected Authenticator.
+    active_authenticator = environ['LETSENCRYPT_AUTHENTICATOR']
+
+    print(f"""Generate Certbot's configuration file using {active_authenticator}.""")
     with (CERTBOT_CONFIG_DIR / CERTBOT_CONFIG_FILENAME).open('w') as f:
-        template = templates.get_template(f'certbot/{CERTBOT_CONFIG_FILENAME}')
-        f.write(template.render(env=environ))
+        cli_template = templates.get_template(f'certbot/{CERTBOT_CONFIG_FILENAME}')
+
+        f.write(cli_template.render(
+            env=environ,
+        ))
+
+    print(f"""Generate Certbot's DNS credentials file using {active_authenticator}.""")
+    with (CERTBOT_DNS_CREDS_DIR / CERTBOT_DNS_CREDS_FILENAME).open('w') as f:
+        creds_template = templates.get_template(f'certbot/credentials/{CERTBOT_DNS_CREDS_FILENAME}')
+
+        f.write(creds_template.render(
+            env=environ,
+        ))
 
 
 def generate_postfix_config():

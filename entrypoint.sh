@@ -25,10 +25,15 @@ file_env() {
 _main() {
   # Each environment variable that supports the *_FILE pattern eeds to be passed into the file_env() function.
   file_env "DB_PASSWORD"
+  file_env "LETSENCRYPT_DNS_KEY"
 
   if [ -d ${SSL_CERT_FOLDER} ]; then
     crond && python3 generate_config.py --postfix && postfix start-fg
   else
+    if [ "${LETSENCRYPT_USE_STAGING}" == "true" ]; then
+      echo "Using certbot in staging mode."
+    fi
+
     python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && postfix start-fg
   fi
 

@@ -14,6 +14,9 @@ services:
       # DB_PASSWORD: mypassword
       DB_PASSWORD_FILE: '/run/secrets/db_password'
       DB_NAME: simplelogin
+      LETSENCRYPT_AUTHENTICATOR: linode
+      LETSENCRYPT_USE_STAGING: 'true'
+      LETSENCRYPT_DNS_KEY: '0123456789abcdef0123456789abcdef01234'
       LETSENCRYPT_EMAIL: support@mydomain.com
       EMAIL_HANDLER_HOST: 127.0.0.1
       POSTFIX_FQDN: mail.mydomain.com
@@ -21,7 +24,7 @@ services:
       # SSL_CERT_FOLDER: /mnt/certs
     secrets:
       - db_password
-  
+
   sut:
     image: alpine:latest
     # Wait for Postfix to start:

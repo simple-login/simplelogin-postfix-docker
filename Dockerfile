@@ -15,9 +15,10 @@ RUN apk add --update --no-cache \
     bash
 
 # Install Python dependencies.
-RUN python3 -m ensurepip && pip3 install jinja2==2.11.3 certbot-dns-cloudflare==1.15.0
+RUN python3 -m ensurepip && pip3 install jinja2==2.11.3 certbot-dns-cloudflare==1.20.0 certbot-dns-linode==1.20.0
 # Certbot dns plugin secerts
-RUN mkdir /.certbot && touch /.certbot/dns-cloudflare-creds.ini
+RUN mkdir -p /credentials && touch /credentials/dns-creds.ini
+RUN chmod 0600 /credentials/*.ini
 # Copy sources.
 COPY generate_config.py /src/
 COPY scripts/certbot-renew-crontab.sh /etc/periodic/hourly/renew-postfix-tls
