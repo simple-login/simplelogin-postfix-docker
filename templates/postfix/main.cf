@@ -101,4 +101,12 @@ tls_ssl_options = NO_RENEGOTIATION
 {% if 'RELAY_HOST' in env %}
 # Set email relay host:
 relayhost = {{ env['RELAY_HOST'] }}
+# Enable auth
+smtp_sasl_auth_enable = yes
+# Set username and password
+smtp_sasl_password_maps = static:{{ env['RELAY_HOST_USERNAME'] }}:{{ env['RELAY_HOST_PASSWORD'] }}
+smtp_sasl_security_options = noanonymous
+# Turn on tls encryption 
+smtp_tls_security_level = encrypt
+header_size_limit = 4096000
 {% endif %}
