@@ -15,7 +15,7 @@ RUN apk add --update --no-cache \
     bash
 
 # Install Python dependencies.
-RUN python3 -m ensurepip && pip3 install jinja2==2.11.3
+RUN python3 -m ensurepip && pip3 install jinja2==2.11.3 MarkupSafe==2.0.1
 
 # Copy sources.
 COPY generate_config.py /src/
