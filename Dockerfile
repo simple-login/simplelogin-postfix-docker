@@ -6,16 +6,17 @@ VOLUME /etc/letsencrypt
 # Install system dependencies.
 RUN apk add --update --no-cache \
     # Postfix itself:
-    postfix>=3.5 postfix-pgsql>=3.5 \
+    postfix>=3.6 postfix-pgsql>=3.6 \
     # To generate Postfix config files:
-    python3>=3.8 \
+    python3>=3.10 \
     # To generate and renew Postfix TLS certificate:
-    certbot>=1.20 \
+    certbot>=1.29 \
     dcron>=4.5 \
     bash
 
 # Install Python dependencies.
-RUN python3 -m ensurepip && pip3 install jinja2==2.11.3 MarkupSafe==2.0.1
+RUN python3 -m ensurepip && pip3 install jinja2==3.1.2
+# RUN python3 -m ensurepip && pip3 install jinja2==3.1.2 MarkupSafe==2.0.1
 
 # Copy sources.
 COPY generate_config.py /src/
