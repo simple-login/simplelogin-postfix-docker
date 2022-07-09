@@ -10,13 +10,12 @@ RUN apk add --update --no-cache \
     # To generate Postfix config files:
     python3>=3.10 \
     # To generate and renew Postfix TLS certificate:
-    certbot>=1.29 \
+    certbot>=1.29.0 \
     dcron>=4.5 \
     bash
 
 # Install Python dependencies.
 RUN python3 -m ensurepip && pip3 install jinja2==3.1.2
-# RUN python3 -m ensurepip && pip3 install jinja2==3.1.2 MarkupSafe==2.0.1
 
 # Copy sources.
 COPY generate_config.py /src/
