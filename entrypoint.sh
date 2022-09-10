@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Supported compatibility modes for Simplelogin
+readonly VALID_COMPATIBILITY_MODES=("v3" "v4")
+
 # This function reads the docker secrets based variables defined with pattern *_FILE into the normal variables
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'DB_PASSWORD' 'default_password'
@@ -22,9 +25,41 @@ file_env() {
   unset "$fileVar"
 }
 
+# A simple utility function to check if a given value is present in array
+# The first argument is the value to be checked
+# The second argument is a bash array
+# Example:
+# readonly MODES=("up" "down")
+# local current_mode="up"
+# if ! contains_element "${current_mode}" "${MODES[@]}"; then
+#   echo "Current mode is not valid value ${current_mode}"
+#   echo "Valid values are: (${MODES[*]})"
+#   exit -1
+# else
+#   echo "Found value: ${current_mode}"
+# fi
+contains_element () {
+  local e
+  for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
+  return 1
+}
+
 _main() {
   # Each environment variable that supports the *_FILE pattern eeds to be passed into the file_env() function.
   file_env "DB_PASSWORD"
+
+  # Test if SIMPLELOGIN_COMPATIBILITY_MODE option was not present, and set it to default v3.
+  if  [[ ! "${SIMPLELOGIN_COMPATIBILITY_MODE}" ]] ; then
+    export SIMPLELOGIN_COMPATIBILITY_MODE="v3";
+  else
+    # Test that SIMPLELOGIN_COMPATIBILITY_MODE contains a valid value
+    if ! contains_element "${SIMPLELOGIN_COMPATIBILITY_MODE}" "${VALID_COMPATIBILITY_MODES[@]}"; then
+      echo "Simplelogin Compatibility Mode: ${SIMPLELOGIN_COMPATIBILITY_MODE} is not valid! Valid values are: (${VALID_COMPATIBILITY_MODES[*]})"
+      exit -1
+    else
+      echo "Simplelogin Compatibility Mode is set to: ${SIMPLELOGIN_COMPATIBILITY_MODE}"
+    fi
+  fi
 
   if [ -d ${SSL_CERT_FOLDER} ]; then
     crond && python3 generate_config.py --postfix && postfix start-fg

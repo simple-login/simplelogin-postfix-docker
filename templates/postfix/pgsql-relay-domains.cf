@@ -4,6 +4,13 @@ user = {{ env['DB_USER'] }}
 password = {{ env['DB_PASSWORD'] }}
 dbname = {{ env['DB_NAME'] }}
 
+# --- Simplelogin Compatibility Mode: {{ env["SIMPLELOGIN_COMPATIBILITY_MODE"] }} ---
+
+{% if env['SIMPLELOGIN_COMPATIBILITY_MODE'] == 'v4' %}
+query = SELECT domain FROM custom_domain WHERE domain='%s' AND verified=true
+    UNION SELECT domain FROM public_domain WHERE domain='%s'
+    UNION SELECT '%s' WHERE '%s' = '{{ env["ALIASES_DEFAULT_DOMAIN"] }}' LIMIT 1;
+{% else %}
 query = SELECT domain FROM custom_domain WHERE domain='%s' AND verified=true
     UNION SELECT '%s' WHERE '%s' = '{{ env["ALIASES_DEFAULT_DOMAIN"] }}' LIMIT 1;
-
+{% endif %}

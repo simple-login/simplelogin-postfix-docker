@@ -19,6 +19,7 @@ services:
       POSTFIX_FQDN: mail.mydomain.com
       RELAY_HOST: myisp.internet.com
       # SSL_CERT_FOLDER: /mnt/certs
+      SIMPLELOGIN_COMPATIBILITY_MODE: v4
     secrets:
       - db_password
   
