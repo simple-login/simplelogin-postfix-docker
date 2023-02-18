@@ -1,7 +1,7 @@
 FROM alpine:3
 
-ARG CERTBOT_VERSION=2.2.0
-ARG PYTHON_VERSION=3.10
+ARG CERTBOT_VERSION=2.3.0
+ARG PYTHON_VERSION=3.11
 ARG JINJA_VERSION=3.1.2
 ARG POSTFIX_VERSION=3.7.4
 
@@ -9,7 +9,7 @@ ARG POSTFIX_VERSION=3.7.4
 ARG BUILD_DATE
 ARG VERSION
 
-LABEL build_version="auto-cert-manager version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL build_version="simplelogin-postfix version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 
 EXPOSE 25 465
 VOLUME /etc/letsencrypt

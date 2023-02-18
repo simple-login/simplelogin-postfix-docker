@@ -5,7 +5,8 @@ secrets:
     file: ./test-data/db_password
 
 services:
-  simplelogin-postfix:
+  postfix:
+    container_name: simplelogin-postfix
     build: ../../
     environment:
       ALIASES_DEFAULT_DOMAIN: mydomain.com
@@ -25,8 +26,9 @@ services:
   
   sut:
     image: alpine:latest
+    container_name: simplelogin-sut
     # Wait for Postfix to start:
     command: >
-      sh -c 'for i in 1 2 3 4 5 6; do echo QUIT|nc simplelogin-postfix 25|grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10 ; else exit 1 ; fi; done'
+      sh -c 'for i in 1 2 3 4 5 6; do echo QUIT|nc postfix 25|grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10 ; else exit 1 ; fi; done'
     depends_on:
-      - simplelogin-postfix
+      - postfix
