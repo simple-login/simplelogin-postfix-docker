@@ -3,6 +3,9 @@
 # Supported compatibility modes for Simplelogin
 readonly VALID_COMPATIBILITY_MODES=("v3" "v4")
 
+# POstfix Custom Data Directory
+readonly DEFAULT_POSTFIX_CUSTOM_DATA_DIRECTORY="/etc/postfix/custom-data"
+
 # This function reads the docker secrets based variables defined with pattern *_FILE into the normal variables
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'DB_PASSWORD' 'default_password'
@@ -44,9 +47,26 @@ contains_element () {
   return 1
 }
 
+setup_postfix_custom_data () {
+  if  [[ ! "${POSTFIX_CUSTOM_DATA_DIRECTORY}" ]]; then
+    export POSTFIX_CUSTOM_DATA_DIRECTORY="${DEFAULT_POSTFIX_CUSTOM_DATA_DIRECTORY}";
+  fi
+
+  mkdir -p ${POSTFIX_CUSTOM_DATA_DIRECTORY}
+
+  if [[ ! -f ${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases ]]; then
+    touch ${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases
+    postalias ${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases
+  fi
+}
+
 _main() {
-  # Each environment variable that supports the *_FILE pattern eeds to be passed into the file_env() function.
+  # Each environment variable that supports the *_FILE pattern needs to be passed into the file_env() function.
   file_env "DB_PASSWORD"
+  file_env "RELAY_HOST_PASSWORD"
+
+  setup_postfix_custom_data
+
 
   # Test if SIMPLELOGIN_COMPATIBILITY_MODE option was not present, and set it to default v3.
   if  [[ ! "${SIMPLELOGIN_COMPATIBILITY_MODE}" ]] ; then
