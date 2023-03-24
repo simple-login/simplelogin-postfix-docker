@@ -24,7 +24,8 @@ services:
       EMAIL_HANDLER_HOST: 127.0.0.1
       POSTFIX_FQDN: mail.mydomain.com
       RELAY_HOST: myisp.internet.com
-      SSL_CERT_FOLDER: /mnt/certs
+      TLS_KEY_FILE: /mnt/certs/privkey.pem
+      TLS_CERT_FILE: /mnt/certs/fullchain.pem
     volumes:
       - certs:/mnt/certs
       - postfix-data:/etc/postfix/custom-data

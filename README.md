@@ -25,7 +25,8 @@ Setting     | Description
 **RELAY_HOST** | If your Postfix instance's IP address is blacklisted (e.g., because it is not a static address), you must use your Internet Service Provider's mail server as a relay, to be able to send emails to the outer world. If **RELAY_HOST_USERNAME** and **RELAY_HOST_PASSWORD** specified in Docker Run / Compose, it will enable authentication to SMTP relay host.
 **RELAY_HOST_USERNAME** | SMTP Relay Host username.
 **RELAY_HOST_PASSWORD** | SMTP Relay Host password. You can also use **RELAY_HOST_PASSWORD_FILE** if using with docker secrets.
-**SSL_CERT_FOLDER** | Custom folder location for storing your own SSL certificate. This **disables** Let's Encrypt. Useful if you use a reverse proxy which manages your certificates. The certificate file name should be: ``fullchain.pem`` and the private key's file name should be: ``privkey.pem``.
+**TLS_KEY_FILE** | Custom key file that provides custom TLS certificate. This **disables** Let's Encrypt. Useful if you use a reverse proxy which manages your certificates. If you are using Letsencrypt to get certificate, this file name would be: ``privkey.pem``.
+**TLS_CERT_FILE** | Custom certificate file that provides custom TLS certificate. This **disables** Let's Encrypt. Useful if you use a reverse proxy which manages your certificates. If you are using Letsencrypt to get certificate, this file name would be: ``fullchain.pem``.
 **SIMPLELOGIN_COMPATIBILITY_MODE** | Compatibility with Simplelogin major application version. The supported values are `v3` and `v4`. If not defined, it will default to `v3`.
 
 \* automatic renewal is managed with [Certbot](https://certbot.eff.org/) and shouldn't fail, unless you have reached Let's Encrypt [rate limits](https://letsencrypt.org/docs/rate-limits/)
