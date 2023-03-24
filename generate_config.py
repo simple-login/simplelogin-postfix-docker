@@ -53,10 +53,13 @@ def generate_postfix_config():
             key_file = None
 
             # Use custom certificate if provided or use Let's Encrypt certificate.
-            if environ.get('SSL_CERT_FOLDER') is not None:
-                print(f"Using custom certificate: {environ.get('SSL_CERT_FOLDER')}")
-                cert_file = Path(environ.get('SSL_CERT_FOLDER')) / LETSENCRYPT_CERTIFICATE
-                key_file = Path(environ.get('SSL_CERT_FOLDER')) / LETSENCRYPT_PRIVATE_KEY
+            if environ.get('TLS_KEY_FILE') is not None and environ.get('TLS_CERT_FILE') is not None:
+                cert_file = Path(environ.get('TLS_CERT_FILE'))
+                key_file = Path(environ.get('TLS_KEY_FILE'))
+
+                print(f"Using custom certificate:")
+                print(f"  with key file: {key_file}")
+                print(f"  with certificate file: {cert_file}")
             else:
                 print("Using Let's Encrypt certificate")
                 ssl_cert_folder = environ.get('POSTFIX_FQDN')

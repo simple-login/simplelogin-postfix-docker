@@ -37,5 +37,9 @@ COPY entrypoint.sh /src/docker-entrypoint.sh
 
 # Generate config, ask for a TLS certificate to Let's Encrypt, start Postfix and Cron daemon.
 WORKDIR /src
+
+  # Idea taken from https://github.com/Mailu/Mailu/blob/master/core/postfix/Dockerfile
+HEALTHCHECK --start-period=350s CMD /usr/sbin/postfix status
+
 CMD ["./docker-entrypoint.sh"]
 
