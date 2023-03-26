@@ -5,6 +5,7 @@ Greatly inspired by:
 https://aoeex.com/phile/postfix-dovecot-and-lets-encrypt-certificates/
 """
 
+import os
 import re
 import sys
 from os import environ
@@ -45,9 +46,13 @@ def generate_certbot_config():
 
 def generate_postfix_config():
     """Generate Postfix's configuration files."""
-    for config in POSTFIX_CONFIG_FILENAMES:
-        with (POSTFIX_CONFIG_DIR / config).open('w') as f:
-            template = templates.get_template(f'postfix/{config}')
+    for filename in POSTFIX_CONFIG_FILENAMES:
+
+        filepath = POSTFIX_CONFIG_DIR / filename
+        print(f"Generating Postfix configuration file: {filepath}")
+
+        with (filepath).open('w') as config_file:
+            template = templates.get_template(f'postfix/{filename}')
 
             cert_file = None
             key_file = None
@@ -57,30 +62,37 @@ def generate_postfix_config():
                 cert_file = Path(environ.get('TLS_CERT_FILE'))
                 key_file = Path(environ.get('TLS_KEY_FILE'))
 
-                print(f"Using custom certificate:")
-                print(f"  with key file: {key_file}")
-                print(f"  with certificate file: {cert_file}")
+                print(f"|Using custom certificate:")
+                print(f"|  with key file: {key_file}")
+                print(f"|  with certificate file: {cert_file}")
             else:
-                print("Using Let's Encrypt certificate")
+                print("|Using Let's Encrypt certificate")
                 ssl_cert_folder = environ.get('POSTFIX_FQDN')
                 cert_file = LETSENCRYPT_CONFIG_DIR / ssl_cert_folder / LETSENCRYPT_CERTIFICATE
                 key_file = LETSENCRYPT_CONFIG_DIR / ssl_cert_folder / LETSENCRYPT_PRIVATE_KEY
             
             # Check if certificate and key files exist. 
             enable_tls = cert_file.is_file() and key_file.is_file()
-            
 
             if not enable_tls:
-                print(f"Certificate files are missing: {cert_file} and {key_file}")
+                print(f"|Certificate files are missing: {cert_file} and {key_file}")
             else:
-                print("Certificate files are present")            
+                print("|Certificate files are present")            
 
-            # Generate config file.
-            f.write(template.render(
+            # Enable Proxy Protocal if postfix is behind a reverse proxy that can use Proxy Protocol like trafik or haproxy.
+            enable_proxy_protocol = os.getenv("ENABLE_PROXY_PROTOCOL", 'False').lower() in ('true', '1', 't')
+            if enable_proxy_protocol:
+                print(f"|Proxy Protocol is enabled.")
+            else:
+                print(f"|Proxy Protocol is disabled.")
+
+            # Generate config_file file.
+            config_file.write(template.render(
                 env=environ,
                 tls=enable_tls,
                 tls_cert=cert_file,
                 tls_key=key_file,
+                proxy_protocol=enable_proxy_protocol,
             ))
 
 

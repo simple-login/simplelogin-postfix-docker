@@ -28,6 +28,7 @@ Setting     | Description
 **TLS_KEY_FILE** | Custom key file that provides custom TLS certificate. This **disables** Let's Encrypt. Useful if you use a reverse proxy which manages your certificates. If you are using Letsencrypt to get certificate, this file name would be: ``privkey.pem``.
 **TLS_CERT_FILE** | Custom certificate file that provides custom TLS certificate. This **disables** Let's Encrypt. Useful if you use a reverse proxy which manages your certificates. If you are using Letsencrypt to get certificate, this file name would be: ``fullchain.pem``.
 **SIMPLELOGIN_COMPATIBILITY_MODE** | Compatibility with Simplelogin major application version. The supported values are `v3` and `v4`. If not defined, it will default to `v3`.
+**ENABLE_PROXY_PROTOCOL** | Enables [Proxy Protocal](https://www.haproxy.com/blog/efficient-smtp-relay-infrastructure-with-postfix-and-load-balancers/) if postfix is behind a reverse proxy that can use Proxy Protocol like `trafik` or `haproxy`. The default value is `false`. *Note: You must also enable this in your reverse to use this feature.*
 
 \* automatic renewal is managed with [Certbot](https://certbot.eff.org/) and shouldn't fail, unless you have reached Let's Encrypt [rate limits](https://letsencrypt.org/docs/rate-limits/)
 

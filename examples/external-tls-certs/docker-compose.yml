@@ -26,6 +26,7 @@ services:
       RELAY_HOST: myisp.internet.com
       TLS_KEY_FILE: /mnt/certs/privkey.pem
       TLS_CERT_FILE: /mnt/certs/fullchain.pem
+      ENABLE_PROXY_PROTOCOL: true
     volumes:
       - certs:/mnt/certs
       - postfix-data:/etc/postfix/custom-data
