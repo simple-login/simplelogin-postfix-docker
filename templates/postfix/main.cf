@@ -116,5 +116,5 @@ smtp_sasl_security_options = noanonymous
 
 {% if proxy_protocol %}
 # Enable Proxy Protocal if postfix is behind a reverse proxy that can use Proxy Protocol like trafik or haproxy.
-postscreen_upstream_proxy_protocol = haproxy
+smtpd_upstream_proxy_protocol = haproxy
 {% endif %}
