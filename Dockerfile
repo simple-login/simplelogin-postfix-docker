@@ -1,9 +1,9 @@
 FROM alpine:3
 
-ARG CERTBOT_VERSION=2.3.0
-ARG PYTHON_VERSION=3.11
-ARG JINJA_VERSION=3.1.2
-ARG POSTFIX_VERSION=3.7.4
+ARG CERTBOT_VERSION=2.8.0
+ARG PYTHON_VERSION=3.12
+ARG POSTFIX_VERSION=3.8.3
+ARG DCRON_VERSION=4.5
 
 # set version label
 ARG BUILD_DATE
@@ -22,11 +22,11 @@ RUN apk add --update --no-cache \
     python3>=${PYTHON_VERSION} \
     # To generate and renew Postfix TLS certificate:
     certbot>=${CERTBOT_VERSION} \
-    dcron>=4.5 \
+    dcron>=${DCRON_VERSION} \
+    # Install Python dependencies:
+    py3-jinja2 \
+    # Install bash:
     bash
-
-# Install Python dependencies.
-RUN python3 -m ensurepip && pip3 install jinja2==${JINJA_VERSION}
 
 # Copy sources.
 COPY generate_config.py /src/
