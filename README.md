@@ -1,13 +1,5 @@
 # Docker Image for SimpleLogin Postfix
 
-This project is a fork of [SimpleLogin/Postfix](https://github.com/simple-login/simplelogin-postfix-docker) with four key changes:
-- Supports a port for SMTP relay (RELAY_PORT)
-- Supports spamhaus Data Query Service
-- Minor changes to config generation to work around issues noticed where RELAY_HOST and RELAY_HOST_USERNAME and RELAY_HOST_PASSWORD from config weren't generating appropriate entries in main.cf
-- Handling PEP 668 Externally Managed which prevents Dockerfile build
-
-Unless you need these features, you should be using https://github.com/simple-login/simplelogin-postfix-docker or the excellent https://github.com/springcomp/self-hosted-simplelogin which pulls it all together - I didn't as I had several other things already running which meant I needed to use different components.
-
 No official Postfix image, tailor-made for [SimpleLogin](https://simplelogin.io/),
 currently exists.
 
