@@ -6,7 +6,7 @@ currently exists.
 Let's fix that, by providing to the community something very lightweight,
 secure\* (with [Let's Encrypt](https://letsencrypt.org/) support) and simple to use 💖
 
-**Compatibility:** this image has been tested in a production environment with SimpleLogin **4.6.54 beta**
+**Compatibility:** this image has been tested in a production environment with SimpleLogin **3.4.0**
 
 \* if a TLS certificate cannot be automatically generated when starting the container, Postfix will run without TLS activated, until the next attempt (happens every hour)
 
