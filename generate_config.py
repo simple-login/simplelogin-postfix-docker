@@ -49,13 +49,9 @@ def generate_postfix_config():
     for filename in POSTFIX_CONFIG_FILENAMES:
 
         # If DQN KEY is provided
-        if filename == 'dnsbl-reply-map':
-            if environ.get('POSTFIX_DQN_KEY') is not None:
-                use_dqn_flag = True
-            else:
-                use_dqn_flag = False
-                # skip generation of mapping file - not needed.
-                continue
+        if filename == 'dnsbl-reply-map' and environ.get('POSTFIX_DQN_KEY') is None:
+            # skip generation of mapping file - not needed.
+            continue
 
         filepath = POSTFIX_CONFIG_DIR / filename
         print(f"Generating Postfix configuration file: {filepath}")
@@ -93,16 +89,17 @@ def generate_postfix_config():
             # Following three tests address RELAY config settings
 
             # Set up Relay Creds
-            if environ.get('RELAY_HOST_USERNAME') is not None and environ.get('RELAY_HOST_PASSWORD') is not None:
-                relay_creds_flag = True
+            relay_creds_flag = (environ.get('RELAY_HOST_USERNAME') is not None and environ.get('RELAY_HOST_PASSWORD') is not None)
 
             # Set up Relay Host and Port
-            if environ.get('RELAY_HOST') is not None and environ.get('RELAY_PORT') is not None:
-                relay_host_port_flag = True
+            relay_host_port_flag = (environ.get('RELAY_HOST') is not None and environ.get('RELAY_PORT') is not None)
 
             # Set up Relay Host Only
-            if environ.get('RELAY_HOST') is not None and environ.get('RELAY_HOST_PASSWORD') is None:
-                relay_host_only_flag = True
+            relay_host_only_flag = (environ.get('RELAY_HOST') is not None and environ.get('RELAY_HOST_PASSWORD') is None)
+
+            # Set up Use DQN
+            use_dqn_flag = environ.get('POSTFIX_DQN_KEY') is not None
+
 
             # Enable Proxy Protocal if postfix is behind a reverse proxy that can use Proxy Protocol like trafik or haproxy.
             enable_proxy_protocol = os.getenv("ENABLE_PROXY_PROTOCOL", 'False').lower() in ('true', '1', 't')
