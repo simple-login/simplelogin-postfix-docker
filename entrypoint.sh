@@ -62,7 +62,7 @@ setup_postfix_custom_data () {
 
 setup_dnsbl_reply_map () {
   if  [[ "${POSTFIX_DQN_KEY}" ]]; then
-    postmap -v lmdb:/etc/postfix/dnsbl-reply-map
+    postmap lmdb:/etc/postfix/dnsbl-reply-map
   fi
 }
 
@@ -72,7 +72,6 @@ _main() {
   file_env "RELAY_HOST_PASSWORD"
 
   setup_postfix_custom_data
-  setup_dnsbl_reply_map
 
 
   # Test if SIMPLELOGIN_COMPATIBILITY_MODE option was not present, and set it to default v3.
@@ -89,9 +88,9 @@ _main() {
   fi
 
   if [[ -f ${TLS_KEY_FILE} && -f ${TLS_CERT_FILE}  ]]; then
-    crond && python3 generate_config.py --postfix && postfix start-fg
+    crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix start-fg
   else
-    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && postfix start-fg
+    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix start-fg
   fi
 }
 
