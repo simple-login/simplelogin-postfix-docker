@@ -73,9 +73,26 @@ smtpd_recipient_restrictions =
    reject_unknown_recipient_domain,
    permit_mynetworks,
    reject_unauth_destination,
+   {% if use_dqn %}
+   # Add in dqn RBLs
+   reject_rbl_client {{ env['POSTFIX_DQN_KEY'] }}.zen.dq.spamhaus.net=127.0.0.[2..11],
+   reject_rhsbl_sender {{ env['POSTFIX_DQN_KEY'] }}.dbl.dq.spamhaus.net=127.0.1.[2..99],
+   reject_rhsbl_helo {{ env['POSTFIX_DQN_KEY'] }}.dbl.dq.spamhaus.net=127.0.1.[2..99],
+   reject_rhsbl_reverse_client {{ env['POSTFIX_DQN_KEY'] }}.dbl.dq.spamhaus.net=127.0.1.[2..99],
+   reject_rhsbl_sender {{ env['POSTFIX_DQN_KEY'] }}.zrd.dq.spamhaus.net=127.0.2.[2..24],
+   reject_rhsbl_helo {{ env['POSTFIX_DQN_KEY'] }}.zrd.dq.spamhaus.net=127.0.2.[2..24],
+   reject_rhsbl_reverse_client {{ env['POSTFIX_DQN_KEY'] }}.zrd.dq.spamhaus.net=127.0.2.[2..24],
+   {% else %}
+   # Use generics zen RBL
    reject_rbl_client zen.spamhaus.org,
+   {% endif %}
    reject_rbl_client bl.spamcop.net,
    permit
+
+{% if use_dqn %}
+# Add in map to mask dqn API KEY
+rbl_reply_maps = lmdb:$config_directory/dnsbl-reply-map
+{% endif %}
 
 # General TLS security improvements
 # Based on: https://kruyt.org/postfix-and-tls-encryption/
@@ -98,12 +115,17 @@ tls_preempt_cipherlist = yes
 # NO_RENEGOTIATION postfix 3.4 and openssl >1.1.1
 tls_ssl_options = NO_RENEGOTIATION
 
-{% if 'RELAY_HOST' in env %}
+{% if relay_host_port %}
+# Set email relay host with port:
+relayhost = {{ env['RELAY_HOST'] }}:{{ env['RELAY_PORT'] }}
+{% endif %}
+
+{% if relay_host_only %}
 # Set email relay host:
 relayhost = {{ env['RELAY_HOST'] }}
 {% endif %}
 
-{% if 'RELAY_HOST_USERNAME' in env and 'RELAY_HOST_PASSWORD' in env %}
+{% if relay_creds %}
 # Enable auth
 smtp_sasl_auth_enable = yes
 # Set username and password

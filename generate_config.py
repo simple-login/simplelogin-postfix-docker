@@ -25,7 +25,7 @@ LETSENCRYPT_PRIVATE_KEY = 'privkey.pem'
 
 # Postfix
 POSTFIX_CONFIG_DIR = Path('/etc/postfix')
-POSTFIX_CONFIG_FILENAMES = ['main.cf', 'pgsql-relay-domains.cf', 'pgsql-transport-maps.cf']  # noqa: E501
+POSTFIX_CONFIG_FILENAMES = ['main.cf', 'pgsql-relay-domains.cf', 'pgsql-transport-maps.cf', 'dnsbl-reply-map']  # noqa: E501
 
 # Templates
 TEMPLATES_DIR = Path('/src/templates')
@@ -47,6 +47,15 @@ def generate_certbot_config():
 def generate_postfix_config():
     """Generate Postfix's configuration files."""
     for filename in POSTFIX_CONFIG_FILENAMES:
+
+        # If DQN KEY is provided
+        if filename == 'dnsbl-reply-map':
+            if environ.get('POSTFIX_DQN_KEY') is not None:
+                use_dqn_flag = True
+            else:
+                use_dqn_flag = False
+                # skip generation of mapping file - not needed.
+                continue
 
         filepath = POSTFIX_CONFIG_DIR / filename
         print(f"Generating Postfix configuration file: {filepath}")
@@ -79,6 +88,22 @@ def generate_postfix_config():
             else:
                 print("|Certificate files are present")            
 
+            # Existing checks for creds didn't seem to work using {% if 'RELAY_HOST_USERNAME' in env and 'RELAY_HOST_PASSWORD' in env %} 
+            # Generated main.cf didn't contain smtp_sasl_auth_enable = yes
+            # Following three tests address RELAY config settings
+
+            # Set up Relay Creds
+            if environ.get('RELAY_HOST_USERNAME') is not None and environ.get('RELAY_HOST_PASSWORD') is not None:
+                relay_creds_flag = True
+
+            # Set up Relay Host and Port
+            if environ.get('RELAY_HOST') is not None and environ.get('RELAY_PORT') is not None:
+                relay_host_port_flag = True
+
+            # Set up Relay Host Only
+            if environ.get('RELAY_HOST') is not None and environ.get('RELAY_HOST_PASSWORD') is None:
+                relay_host_only_flag = True
+
             # Enable Proxy Protocal if postfix is behind a reverse proxy that can use Proxy Protocol like trafik or haproxy.
             enable_proxy_protocol = os.getenv("ENABLE_PROXY_PROTOCOL", 'False').lower() in ('true', '1', 't')
             if enable_proxy_protocol:
@@ -93,6 +118,10 @@ def generate_postfix_config():
                 tls_cert=cert_file,
                 tls_key=key_file,
                 proxy_protocol=enable_proxy_protocol,
+                relay_creds=relay_creds_flag,
+                relay_host_only=relay_host_only_flag,
+                relay_host_port=relay_host_port_flag,
+                use_dqn=use_dqn_flag,
             ))
 
 

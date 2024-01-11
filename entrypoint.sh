@@ -60,12 +60,19 @@ setup_postfix_custom_data () {
   fi
 }
 
+setup_dnsbl_reply_map () {
+  if  [[ "${POSTFIX_DQN_KEY}" ]]; then
+    postmap -v lmdb:/etc/postfix/dnsbl-reply-map
+  fi
+}
+
 _main() {
   # Each environment variable that supports the *_FILE pattern needs to be passed into the file_env() function.
   file_env "DB_PASSWORD"
   file_env "RELAY_HOST_PASSWORD"
 
   setup_postfix_custom_data
+  setup_dnsbl_reply_map
 
 
   # Test if SIMPLELOGIN_COMPATIBILITY_MODE option was not present, and set it to default v3.
