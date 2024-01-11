@@ -26,6 +26,9 @@ RUN apk add --update --no-cache \
     dcron>=${DCRON_VERSION} \
     bash
 
+# Fix PEP 668 Externally Managed error
+RUN rm /usr/lib/python${PYTHON_VERSION}/EXTERNALLY-MANAGED
+
 # Install Python dependencies.
 RUN python3 -m ensurepip && pip3 install jinja2==${JINJA_VERSION}
 
