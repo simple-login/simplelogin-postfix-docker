@@ -60,6 +60,12 @@ setup_postfix_custom_data () {
   fi
 }
 
+setup_dnsbl_reply_map () {
+  if  [[ "${POSTFIX_DQN_KEY}" ]]; then
+    postmap lmdb:/etc/postfix/dnsbl-reply-map
+  fi
+}
+
 _main() {
   # Each environment variable that supports the *_FILE pattern needs to be passed into the file_env() function.
   file_env "DB_PASSWORD"
@@ -82,9 +88,9 @@ _main() {
   fi
 
   if [[ -f ${TLS_KEY_FILE} && -f ${TLS_CERT_FILE}  ]]; then
-    crond && python3 generate_config.py --postfix && postfix start-fg
+    crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix postfix start-fg
   else
-    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && postfix start-fg
+    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix postfix start-fg
   fi
 }
 
