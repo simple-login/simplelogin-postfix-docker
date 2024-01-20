@@ -88,9 +88,9 @@ _main() {
   fi
 
   if [[ -f ${TLS_KEY_FILE} && -f ${TLS_CERT_FILE}  ]]; then
-    crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix postfix start-fg
+    crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix start-fg
   else
-    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix postfix start-fg
+    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix start-fg
   fi
 }
 
