@@ -107,6 +107,9 @@ def generate_postfix_config():
             else:
                 print(f"|Proxy Protocol is disabled.")
 
+            # Enable ARC signatures
+            enable_arc_sign = environ.get('ENABLE_ARC') is not None and os.getenv('ENABLE_ARC', 'False').lower() == "true"
+
             # Generate config_file file.
             config_file.write(template.render(
                 env=environ,
@@ -118,6 +121,7 @@ def generate_postfix_config():
                 relay_host_only=relay_host_only_flag,
                 relay_host_port=relay_host_port_flag,
                 use_dqn=use_dqn_flag,
+                use_arc=enable_arc_sign
             ))
 
 

@@ -140,3 +140,10 @@ smtp_sasl_security_options = noanonymous
 # Enable Proxy Protocal if postfix is behind a reverse proxy that can use Proxy Protocol like trafik or haproxy.
 smtpd_upstream_proxy_protocol = haproxy
 {% endif %}
+
+{% if use_arc %}
+milter_default_action = accept
+milter_protocol = 6
+smtpd_milters = inet:{{ env['OPENARC_HOST'] }}:{{ env['OPENARC_PORT'] }}
+non_smtpd_milters = inet:{{ env['OPENARC_HOST'] }}:{{ env['OPENARC_PORT'] }}
+{% endif %}
