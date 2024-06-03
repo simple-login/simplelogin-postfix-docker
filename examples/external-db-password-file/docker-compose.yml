@@ -1,5 +1,4 @@
-version: "3"
-
+---
 secrets:
   db_password:
     file: ./test-data/db_password
