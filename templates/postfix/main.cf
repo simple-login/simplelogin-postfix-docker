@@ -36,8 +36,12 @@ smtp_tls_security_level = none
 
 alias_maps = lmdb:{{ env['POSTFIX_CUSTOM_DATA_DIRECTORY'] }}/aliases
 
+{% if use_mynetworks %}
+mynetworks = {{ env['MYNETWORKS'] }}
+{% else %}
 # Allow containers on the same private network to send emails via Postfix.
 mynetworks_style = subnet
+{% endif %}
 
 # Set your domain here
 mydestination =

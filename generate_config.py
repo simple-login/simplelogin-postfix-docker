@@ -107,6 +107,9 @@ def generate_postfix_config():
             else:
                 print(f"|Proxy Protocol is disabled.")
 
+            # Set up mynetworks
+            use_mynetworks_flag = (environ.get('MYNETWORKS') is not None)
+
             # Generate config_file file.
             config_file.write(template.render(
                 env=environ,
@@ -118,6 +121,7 @@ def generate_postfix_config():
                 relay_host_only=relay_host_only_flag,
                 relay_host_port=relay_host_port_flag,
                 use_dqn=use_dqn_flag,
+                use_mynetworks=use_mynetworks_flag,
             ))
 
 
