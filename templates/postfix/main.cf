@@ -22,7 +22,7 @@ smtp_tls_security_level = may
 
 # TLS parameters for SMPTD (incoming mail)
 {% if tls %}
-smtp_tls_security_level = may
+smtpd_tls_security_level = may
 smtpd_tls_cert_file = {{ tls_cert }}
 smtpd_tls_key_file = {{ tls_key }}
 smtpd_tls_session_cache_database = lmdb:${data_directory}/smtpd_scache
