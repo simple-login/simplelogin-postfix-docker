@@ -18,19 +18,17 @@ readme_directory = no
 compatibility_level = 3.6
 
 # TLS parameters for SMTP (outgoing mail)
-smtp_use_tls = yes
 smtp_tls_security_level = may
 
 # TLS parameters for SMPTD (incoming mail)
 {% if tls %}
-smtpd_use_tls = yes
-smtp_tls_security_level = may
+smtpd_tls_security_level = may
 smtpd_tls_cert_file = {{ tls_cert }}
 smtpd_tls_key_file = {{ tls_key }}
 smtpd_tls_session_cache_database = lmdb:${data_directory}/smtpd_scache
 smtp_tls_session_cache_database = lmdb:${data_directory}/smtp_scache
 {% else %}
-smtpd_use_tls = no
+smtp_tls_security_level = none
 {% endif %}
 
 # See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
@@ -38,8 +36,12 @@ smtpd_use_tls = no
 
 alias_maps = lmdb:{{ env['POSTFIX_CUSTOM_DATA_DIRECTORY'] }}/aliases
 
+{% if use_mynetworks %}
+mynetworks = {{ env['MYNETWORKS'] }}
+{% else %}
 # Allow containers on the same private network to send emails via Postfix.
 mynetworks_style = subnet
+{% endif %}
 
 # Set your domain here
 mydestination =

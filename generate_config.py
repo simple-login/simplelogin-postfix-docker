@@ -109,6 +109,8 @@ def generate_postfix_config():
 
             # Enable ARC signatures
             enable_arc_sign = environ.get('ENABLE_ARC') is not None and os.getenv('ENABLE_ARC', 'False').lower() == "true"
+            # Set up mynetworks
+            use_mynetworks_flag = (environ.get('MYNETWORKS') is not None)
 
             # Generate config_file file.
             config_file.write(template.render(
@@ -121,7 +123,8 @@ def generate_postfix_config():
                 relay_host_only=relay_host_only_flag,
                 relay_host_port=relay_host_port_flag,
                 use_dqn=use_dqn_flag,
-                use_arc=enable_arc_sign
+                use_arc=enable_arc_sign,
+                use_mynetworks=use_mynetworks_flag,
             ))
 
 

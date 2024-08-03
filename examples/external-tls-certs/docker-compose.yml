@@ -1,5 +1,4 @@
-version: "3"
-
+---
 services:
   certgen:
     container_name: simplelogin-certgen
