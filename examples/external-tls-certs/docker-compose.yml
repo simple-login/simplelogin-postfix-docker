@@ -1,0 +1,44 @@
+---
+services:
+  certgen:
+    container_name: simplelogin-certgen
+    image: stakater/ssl-certs-generator
+    environment:
+      SSL_KEY: privkey.pem
+      SSL_CERT: fullchain.pem
+    volumes:
+      - certs:/certs
+
+  postfix:
+    container_name: simplelogin-postfix
+    build: ../../
+    environment:
+      ALIASES_DEFAULT_DOMAIN: mydomain.com
+      DB_HOST: localhost
+      DB_USER: myuser
+      DB_PASSWORD: mypassword
+      #DB_PASSWORD_FILE: '/run/secrets/db_password'
+      DB_NAME: simplelogin
+      LETSENCRYPT_EMAIL: support@mydomain.com
+      EMAIL_HANDLER_HOST: 127.0.0.1
+      POSTFIX_FQDN: mail.mydomain.com
+      RELAY_HOST: myisp.internet.com
+      TLS_KEY_FILE: /mnt/certs/privkey.pem
+      TLS_CERT_FILE: /mnt/certs/fullchain.pem
+      ENABLE_PROXY_PROTOCOL: true
+    volumes:
+      - certs:/mnt/certs
+      - postfix-data:/etc/postfix/custom-data
+  
+  sut:
+    container_name: simplelogin-sut
+    image: alpine:latest
+    # Wait for Postfix to start:
+    command: >
+      sh -c 'for i in 1 2 3 4 5 6; do echo QUIT|nc postfix 25|grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10 ; else exit 1 ; fi; done'
+    depends_on:
+      - postfix
+
+volumes:
+  certs:
+  postfix-data:

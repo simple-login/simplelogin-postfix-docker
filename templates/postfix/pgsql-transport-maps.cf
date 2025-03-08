@@ -4,7 +4,14 @@ user = {{ env['DB_USER'] }}
 password = {{ env['DB_PASSWORD'] }}
 dbname = {{ env['DB_NAME'] }}
 
-# forward to smtp:{{ env['EMAIL_HANDLER_HOST'] }}:20381 for custom domain AND email domain
+# --- Simplelogin Compatibility Mode: {{ env["SIMPLELOGIN_COMPATIBILITY_MODE"] }} ---
+
+# forward to smtp:{{ env["EMAIL_HANDLER_HOST"] }}:20381 for custom domain AND email domain
+{% if env['SIMPLELOGIN_COMPATIBILITY_MODE'] == 'v4' %}
+query = SELECT 'smtp:{{ env["EMAIL_HANDLER_HOST"] }}:20381' FROM custom_domain WHERE domain = '%s' AND verified=true
+    UNION SELECT 'smtp:{{ env["EMAIL_HANDLER_HOST"] }}:20381' FROM public_domain WHERE domain = '%s'
+    UNION SELECT 'smtp:{{ env["EMAIL_HANDLER_HOST"] }}:20381' WHERE '%s' = '{{ env["ALIASES_DEFAULT_DOMAIN"] }}' LIMIT 1;
+{% else %}
 query = SELECT 'smtp:{{ env["EMAIL_HANDLER_HOST"] }}:20381' FROM custom_domain WHERE domain = '%s' AND verified=true
     UNION SELECT 'smtp:{{ env["EMAIL_HANDLER_HOST"] }}:20381' WHERE '%s' = '{{ env["ALIASES_DEFAULT_DOMAIN"] }}' LIMIT 1;
-
+{% endif %}

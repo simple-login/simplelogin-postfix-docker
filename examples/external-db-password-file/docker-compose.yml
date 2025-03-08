@@ -1,0 +1,33 @@
+---
+secrets:
+  db_password:
+    file: ./test-data/db_password
+
+services:
+  postfix:
+    container_name: simplelogin-postfix
+    build: ../../
+    environment:
+      ALIASES_DEFAULT_DOMAIN: mydomain.com
+      DB_HOST: localhost
+      DB_USER: myuser
+      # DB_PASSWORD: mypassword
+      DB_PASSWORD_FILE: '/run/secrets/db_password'
+      DB_NAME: simplelogin
+      LETSENCRYPT_EMAIL: support@mydomain.com
+      EMAIL_HANDLER_HOST: 127.0.0.1
+      POSTFIX_FQDN: mail.mydomain.com
+      RELAY_HOST: myisp.internet.com
+      # SSL_CERT_FOLDER: /mnt/certs
+      SIMPLELOGIN_COMPATIBILITY_MODE: v4
+    secrets:
+      - db_password
+  
+  sut:
+    image: alpine:latest
+    container_name: simplelogin-sut
+    # Wait for Postfix to start:
+    command: >
+      sh -c 'for i in 1 2 3 4 5 6; do echo QUIT|nc postfix 25|grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10 ; else exit 1 ; fi; done'
+    depends_on:
+      - postfix

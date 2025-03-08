@@ -1,31 +1,45 @@
 FROM alpine:3
 
-EXPOSE 25 80
+ARG CERTBOT_VERSION=2.11.0
+ARG PYTHON_VERSION=3.12
+ARG POSTFIX_VERSION=3.9.0
+ARG DCRON_VERSION=4.5
+
+# set version label
+ARG BUILD_DATE
+ARG VERSION
+
+LABEL build_version="simplelogin-postfix version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+
+EXPOSE 25 465
 VOLUME /etc/letsencrypt
 
 # Install system dependencies.
 RUN apk add --update --no-cache \
     # Postfix itself:
-    postfix postfix-pgsql \
+    postfix>=${POSTFIX_VERSION} postfix-pgsql>=${POSTFIX_VERSION} \
     # To generate Postfix config files:
-    python3 \
+    python3>=${PYTHON_VERSION} \
     # To generate and renew Postfix TLS certificate:
-    certbot \
-    dcron
-
-# Install Python dependencies.
-RUN python3 -m ensurepip
-RUN pip3 install jinja2
+    certbot>=${CERTBOT_VERSION} \
+    dcron>=${DCRON_VERSION} \
+    # Install Python dependencies:
+    py3-jinja2 \
+    # Install bash:
+    bash
 
 # Copy sources.
-ADD generate_config.py /src/
-ADD scripts/certbot-renew-crontab.sh /etc/periodic/hourly/renew-postfix-tls
-ADD scripts/certbot-renew-posthook.sh /etc/letsencrypt/renewal-hooks/post/reload-postfix.sh
-ADD templates /src/templates
+COPY generate_config.py /src/
+COPY scripts/certbot-renew-crontab.sh /etc/periodic/hourly/renew-postfix-tls
+COPY scripts/certbot-renew-posthook.sh /etc/letsencrypt/renewal-hooks/post/reload-postfix.sh
+COPY templates /src/templates
+COPY entrypoint.sh /src/docker-entrypoint.sh
 
 # Generate config, ask for a TLS certificate to Let's Encrypt, start Postfix and Cron daemon.
 WORKDIR /src
-CMD ./generate_config.py --certbot && certbot -n certonly; crond && ./generate_config.py --postfix && postfix start-fg
 
-# Idea taken from https://github.com/Mailu/Mailu/blob/master/core/postfix/Dockerfile
-HEALTHCHECK --start-period=350s CMD echo QUIT|nc localhost 25|grep "220 .* ESMTP Postfix"
+  # Idea taken from https://github.com/Mailu/Mailu/blob/master/core/postfix/Dockerfile
+HEALTHCHECK --start-period=350s CMD /usr/sbin/postfix status
+
+CMD ["./docker-entrypoint.sh"]
+
