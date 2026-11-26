@@ -26,6 +26,7 @@ CI (`.github/workflows/main.yml`) only builds/pushes the multi-arch image; it ru
 ## Gotchas
 
 - `templates/postfix/main.cf` contains the security rules. `smtpd_relay_restrictions` ordering is deliberate (recent commits fixed an open-relay regression); do not reorder it casually.
+- `compatibility_level` is `3.11` and must stay in sync with `POSTFIX_VERSION` (currently `3.11`). `smtp_tlsrpt_skip_reused_handshakes` is intentionally left unset so Postfix 3.11's new default applies.
 - `ENABLE_PROXY_PROTOCOL` must only affect the dedicated `POSTFIX_PROXY_PROTOCOL_PORT` listener (default `10025`), created with `postconf -M`/`-P` in `entrypoint.sh`. Never set `smtpd_upstream_proxy_protocol` globally in `main.cf`; `:25` must stay non-PROXY for SimpleLogin.
 - Custom TLS (`TLS_KEY_FILE` + `TLS_CERT_FILE` both set) skips Certbot entirely. Otherwise Certbot uses `standalone` for `POSTFIX_FQDN`; renewal is hourly via `/etc/periodic/hourly/renew-postfix-tls`, and the post-hook regenerates Postfix config and reloads. Certbot startup is slow; the healthcheck has a 350s start period.
 - `DB_PASSWORD` and `RELAY_HOST_PASSWORD` support Docker-secret `*_FILE` variants, resolved in `entrypoint.sh` (`file_env`).
