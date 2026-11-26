@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vs
+.venv
+__pycache__
+*.pyc
+AGENTS.md
+LICENSE
+README.md
+examples
+tests
+.hadolint.yaml
+.gitignore
