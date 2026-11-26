@@ -1,0 +1,79 @@
+---
+services:
+  postfix:
+    build: ../../
+    container_name: simplelogin-postfix
+    environment:
+      ALIASES_DEFAULT_DOMAIN: mydomain.com
+      DB_HOST: localhost
+      DB_USER: myuser
+      DB_PASSWORD: mypassword
+      DB_NAME: simplelogin
+      LETSENCRYPT_EMAIL: support@mydomain.com
+      EMAIL_HANDLER_HOST: 127.0.0.1
+      POSTFIX_FQDN: mail.mydomain.com
+      RELAY_HOST: myisp.internet.com
+      ENABLE_PROXY_PROTOCOL: "true"
+      MYNETWORKS: "172.30.0.0/24"
+    volumes:
+      - postfix-data:/etc/postfix/custom-data
+    networks:
+      proxy-net: {}
+      sl-net:
+        aliases:
+          - postfix-internal
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=simplelogin-proxy-net
+      - traefik.tcp.routers.smtp.rule=HostSNI(`*`)
+      - traefik.tcp.routers.smtp.entrypoints=smtp
+      - traefik.tcp.routers.smtp.service=smtp
+      - traefik.tcp.services.smtp.loadbalancer.server.port=10025
+      - traefik.tcp.services.smtp.loadbalancer.serversTransport=postfix-proxy@file
+
+  traefik:
+    image: traefik:v3
+    container_name: simplelogin-traefik
+    command:
+      - --entrypoints.smtp.address=:25/tcp
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=simplelogin-proxy-net
+      - --providers.file.directory=/etc/traefik/dynamic
+    ports:
+      - "2525:25/tcp"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+    networks:
+      - proxy-net
+
+  sut:
+    image: alpine:latest
+    container_name: simplelogin-sut
+    command: >
+      sh -c '
+        for i in 1 2 3 4 5 6; do { sleep 2; echo QUIT; } | nc -w 5 traefik 25 | grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10; else exit 1; fi; done &&
+        for i in 1 2 3 4 5 6; do { sleep 2; echo QUIT; } | nc -w 5 postfix-internal 25 | grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10; else exit 1; fi; done
+      '
+    depends_on:
+      - traefik
+      - postfix
+    networks:
+      - proxy-net
+      - sl-net
+
+networks:
+  proxy-net:
+    name: simplelogin-proxy-net
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24
+  sl-net:
+    name: simplelogin-sl-net
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  postfix-data:

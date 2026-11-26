@@ -5,7 +5,6 @@ Greatly inspired by:
 https://aoeex.com/phile/postfix-dovecot-and-lets-encrypt-certificates/
 """
 
-import os
 import re
 import sys
 from os import environ
@@ -100,13 +99,6 @@ def generate_postfix_config():
             # Set up Use DQN
             use_dqn_flag = environ.get('POSTFIX_DQN_KEY') is not None
 
-            # Enable Proxy Protocal if postfix is behind a reverse proxy that can use Proxy Protocol like trafik or haproxy.
-            enable_proxy_protocol = os.getenv("ENABLE_PROXY_PROTOCOL", 'False').lower() in ('true', '1', 't')
-            if enable_proxy_protocol:
-                print(f"|Proxy Protocol is enabled.")
-            else:
-                print(f"|Proxy Protocol is disabled.")
-
             # Set up mynetworks
             use_mynetworks_flag = (environ.get('MYNETWORKS') is not None)
 
@@ -116,7 +108,6 @@ def generate_postfix_config():
                 tls=enable_tls,
                 tls_cert=cert_file,
                 tls_key=key_file,
-                proxy_protocol=enable_proxy_protocol,
                 relay_creds=relay_creds_flag,
                 relay_host_only=relay_host_only_flag,
                 relay_host_port=relay_host_port_flag,
