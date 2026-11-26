@@ -1,4 +1,4 @@
-FROM alpine:3
+FROM alpine:3.24
 
 ARG CERTBOT_VERSION=5.6
 ARG PYTHON_VERSION=3.14
@@ -11,7 +11,7 @@ ARG VERSION
 
 LABEL build_version="simplelogin-postfix version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 
-EXPOSE 25 465 10025
+EXPOSE 25 80 10025
 VOLUME /etc/letsencrypt
 
 # Install system dependencies.
@@ -27,13 +27,13 @@ RUN apk add --update --no-cache \
     "dcron>=${DCRON_VERSION}" \
     # Install Python dependencies:
     py3-jinja2 \
-    # Install bash:
-    bash
+    # TLS trust store and shell:
+    ca-certificates bash
 
 # Copy sources.
 COPY generate_config.py /src/
 COPY scripts/certbot-renew-crontab.sh /etc/periodic/hourly/renew-postfix-tls
-COPY scripts/certbot-renew-posthook.sh /etc/letsencrypt/renewal-hooks/post/reload-postfix.sh
+COPY scripts/reload-postfix.sh /usr/local/bin/reload-postfix
 COPY templates /src/templates
 COPY entrypoint.sh /src/docker-entrypoint.sh
 

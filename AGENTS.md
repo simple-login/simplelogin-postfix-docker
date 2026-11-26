@@ -12,12 +12,12 @@ Docker image that runs Postfix for SimpleLogin. No application code: the image e
 - Proxy smoke test: `tests/run-compose-test.sh examples/proxy-protocol/docker-compose.yml sut`
   - Verifies Traefik -> Postfix PROXY v2 on `10025`, direct `25`, and open-relay rejection from the untrusted `proxy-net`.
   - Starts a minimal Postgres service (`examples/proxy-protocol/init.sql`) so the relay rejection is evaluated against a working `relay_domains` lookup.
-- Dockerfile lint: `hadolint Dockerfile` (`.hadolint.yaml` ignores DL3018 because apk packages are intentionally unpinned).
+- Dockerfile lint: `hadolint Dockerfile` (`.hadolint.yaml` ignores DL3018 because apk packages use minimum version constraints rather than exact pins).
 - Shell lint: `shellcheck entrypoint.sh scripts/*.sh tests/*.sh`
 - Python syntax check: `python3 -m py_compile generate_config.py` (only stdlib + `py3-jinja2`, installed in the image).
 - Compose validation: `docker compose -f examples/<name>/docker-compose.yml config`
 
-`tests/run-compose-test.sh` uses `docker compose wait`, so it requires Compose v2.17 or newer.
+`tests/run-compose-test.sh` uses `docker compose wait`, so it requires Compose v2.17 or newer. Wait only for long-running services such as `sut`; one-shot services like `certgen` can disappear before `wait` runs.
 
 CI (`.github/workflows/main.yml`) runs lint and the compose smoke tests before building/pushing the multi-arch image.
 
@@ -35,9 +35,11 @@ CI (`.github/workflows/main.yml`) runs lint and the compose smoke tests before b
 - `templates/postfix/main.cf` contains the security rules. `smtpd_relay_restrictions` ordering is deliberate (recent commits fixed an open-relay regression); do not reorder it casually.
 - `compatibility_level` is `3.11` and must stay in sync with `POSTFIX_VERSION` (currently `3.11`). `smtp_tlsrpt_skip_reused_handshakes` is intentionally left unset so Postfix 3.11's new default applies.
 - `ENABLE_PROXY_PROTOCOL` must only affect the dedicated `POSTFIX_PROXY_PROTOCOL_PORT` listener (default `10025`), created with `postconf -M`/`-P` in `entrypoint.sh`. Never set `smtpd_upstream_proxy_protocol` globally in `main.cf`; `:25` must stay non-PROXY for SimpleLogin.
-- Custom TLS (`TLS_KEY_FILE` + `TLS_CERT_FILE` both set) skips Certbot entirely. Otherwise Certbot uses `standalone` for `POSTFIX_FQDN`; renewal is hourly via `/etc/periodic/hourly/renew-postfix-tls`, and the post-hook regenerates Postfix config and reloads. Certbot startup is slow; the healthcheck has a 350s start period.
+- Custom TLS (`TLS_KEY_FILE` + `TLS_CERT_FILE` both set) skips Certbot entirely; both files are validated at startup. Otherwise Certbot uses `standalone` for `POSTFIX_FQDN`; renewal is hourly via `/etc/periodic/hourly/renew-postfix-tls`, and the deploy hook at `/usr/local/bin/reload-postfix` regenerates Postfix config and reloads only if Postfix is running. The hook is outside `/etc/letsencrypt` so the volume cannot mask it. Certbot startup is slow; the healthcheck has a 350s start period.
+- `entrypoint.sh` uses `set -euo pipefail`, validates custom TLS, and `exec`s `postfix start-fg` for signal handling. `file_env` exits when both `VAR` and `VAR_FILE` are set or the secret file is unreadable.
+- Changing `POSTFIX_PROXY_PROTOCOL_PORT` on a restarted container can leave the old listener in `master.cf`; recreate the container rather than restarting it.
+- Dockerfile pins Alpine to `3.24`; package `ARG`s are minimum versions. Exposed ports are `25`, `80` (Certbot standalone), and `10025` (Proxy Protocol).
 - `DB_PASSWORD` and `RELAY_HOST_PASSWORD` support Docker-secret `*_FILE` variants, resolved in `entrypoint.sh` (`file_env`).
-- Dockerfile version `ARG`s (`CERTBOT_VERSION`, `PYTHON_VERSION`, `POSTFIX_VERSION`, `DCRON_VERSION`) are the place to bump dependency versions.
 - `README.md`'s env-var table is the user-facing reference; update it when adding an env var.
 
 ## Workflow

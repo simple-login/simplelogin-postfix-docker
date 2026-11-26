@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 # Supported compatibility modes for Simplelogin
 readonly VALID_COMPATIBILITY_MODES=("v3" "v4")
 
@@ -17,14 +19,19 @@ file_env() {
   local var="$1"
   local fileVar="${var}_FILE"
   local def="${2:-}"
-  if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
-  	echo "Both $var and $fileVar are set (but are exclusive)"
+  if [[ -n "${!var:-}" && -n "${!fileVar:-}" ]]; then
+    echo "Both $var and $fileVar are set (but are exclusive)" >&2
+    exit 1
   fi
   local val="$def"
-  if [ "${!var:-}" ]; then
-  	val="${!var}"
-  elif [ "${!fileVar:-}" ]; then
-  	val="$(< "${!fileVar}")"
+  if [[ -n "${!var:-}" ]]; then
+    val="${!var}"
+  elif [[ -n "${!fileVar:-}" ]]; then
+    if [[ ! -r "${!fileVar}" ]]; then
+      echo "Cannot read $fileVar: ${!fileVar}" >&2
+      exit 1
+    fi
+    val="$(< "${!fileVar}")"
   fi
   export "$var"="$val"
   unset "$fileVar"
@@ -49,9 +56,30 @@ contains_element () {
   return 1
 }
 
+validate_custom_tls () {
+  local key="${TLS_KEY_FILE:-}"
+  local cert="${TLS_CERT_FILE:-}"
+
+  if [[ -n "$key" && -z "$cert" ]] || [[ -z "$key" && -n "$cert" ]]; then
+    echo "TLS_KEY_FILE and TLS_CERT_FILE must be set together." >&2
+    exit 1
+  fi
+
+  if [[ -n "$key" ]]; then
+    if [[ ! -f "$key" || ! -r "$key" ]]; then
+      echo "TLS_KEY_FILE is not a readable file: $key" >&2
+      exit 1
+    fi
+    if [[ ! -f "$cert" || ! -r "$cert" ]]; then
+      echo "TLS_CERT_FILE is not a readable file: $cert" >&2
+      exit 1
+    fi
+  fi
+}
+
 setup_postfix_custom_data () {
-  if  [[ ! "${POSTFIX_CUSTOM_DATA_DIRECTORY}" ]]; then
-    export POSTFIX_CUSTOM_DATA_DIRECTORY="${DEFAULT_POSTFIX_CUSTOM_DATA_DIRECTORY}";
+  if [[ -z "${POSTFIX_CUSTOM_DATA_DIRECTORY:-}" ]]; then
+    export POSTFIX_CUSTOM_DATA_DIRECTORY="${DEFAULT_POSTFIX_CUSTOM_DATA_DIRECTORY}"
   fi
 
   mkdir -p "${POSTFIX_CUSTOM_DATA_DIRECTORY}"
@@ -63,22 +91,23 @@ setup_postfix_custom_data () {
 }
 
 setup_dnsbl_reply_map () {
-  if  [[ "${POSTFIX_DQN_KEY}" ]]; then
+  if [[ -n "${POSTFIX_DQN_KEY:-}" ]]; then
     postmap lmdb:/etc/postfix/dnsbl-reply-map
   fi
 }
 
 setup_proxy_protocol () {
   local port="${POSTFIX_PROXY_PROTOCOL_PORT:-${DEFAULT_POSTFIX_PROXY_PROTOCOL_PORT}}"
+  local proxy_protocol="${ENABLE_PROXY_PROTOCOL:-}"
 
-  if [[ "${ENABLE_PROXY_PROTOCOL,,}" =~ ^(true|1|t)$ ]]; then
+  if [[ "${proxy_protocol,,}" =~ ^(true|1|t)$ ]]; then
     if ! [[ "${port}" =~ ^[0-9]+$ ]] || (( 10#${port} < 1 || 10#${port} > 65535 )); then
-      echo "Invalid POSTFIX_PROXY_PROTOCOL_PORT: ${port}"
+      echo "Invalid POSTFIX_PROXY_PROTOCOL_PORT: ${port}" >&2
       exit 1
     fi
 
     if (( 10#${port} == 25 )); then
-      echo "POSTFIX_PROXY_PROTOCOL_PORT cannot be 25; port 25 must remain non-PROXY for SimpleLogin."
+      echo "POSTFIX_PROXY_PROTOCOL_PORT cannot be 25; port 25 must remain non-PROXY for SimpleLogin." >&2
       exit 1
     fi
 
@@ -94,27 +123,36 @@ _main() {
   file_env "DB_PASSWORD"
   file_env "RELAY_HOST_PASSWORD"
 
+  validate_custom_tls
   setup_postfix_custom_data
 
-
   # Test if SIMPLELOGIN_COMPATIBILITY_MODE option was not present, and set it to default v3.
-  if  [[ ! "${SIMPLELOGIN_COMPATIBILITY_MODE}" ]] ; then
-    export SIMPLELOGIN_COMPATIBILITY_MODE="v3";
+  if [[ -z "${SIMPLELOGIN_COMPATIBILITY_MODE:-}" ]]; then
+    export SIMPLELOGIN_COMPATIBILITY_MODE="v3"
+  elif ! contains_element "${SIMPLELOGIN_COMPATIBILITY_MODE}" "${VALID_COMPATIBILITY_MODES[@]}"; then
+    echo "Simplelogin Compatibility Mode: ${SIMPLELOGIN_COMPATIBILITY_MODE} is not valid! Valid values are: (${VALID_COMPATIBILITY_MODES[*]})" >&2
+    exit 1
   else
-    # Test that SIMPLELOGIN_COMPATIBILITY_MODE contains a valid value
-    if ! contains_element "${SIMPLELOGIN_COMPATIBILITY_MODE}" "${VALID_COMPATIBILITY_MODES[@]}"; then
-      echo "Simplelogin Compatibility Mode: ${SIMPLELOGIN_COMPATIBILITY_MODE} is not valid! Valid values are: (${VALID_COMPATIBILITY_MODES[*]})"
-      exit 1
-    else
-      echo "Simplelogin Compatibility Mode is set to: ${SIMPLELOGIN_COMPATIBILITY_MODE}"
-    fi
+    echo "Simplelogin Compatibility Mode is set to: ${SIMPLELOGIN_COMPATIBILITY_MODE}"
   fi
 
-  if [[ -f ${TLS_KEY_FILE} && -f ${TLS_CERT_FILE}  ]]; then
-    python3 generate_config.py --postfix && setup_dnsbl_reply_map && setup_proxy_protocol && postfix start-fg
-  else
-    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && setup_proxy_protocol && postfix start-fg
+  if [[ -n "${TLS_KEY_FILE:-}" ]]; then
+    python3 generate_config.py --postfix
+    setup_dnsbl_reply_map
+    setup_proxy_protocol
+    exec postfix start-fg
   fi
+
+  rm -f /etc/letsencrypt/renewal-hooks/post/reload-postfix.sh 2>/dev/null || true
+  python3 generate_config.py --certbot
+  if ! certbot -n certonly; then
+    echo "Certbot failed; starting Postfix without TLS until the next renewal attempt." >&2
+  fi
+  crond
+  python3 generate_config.py --postfix
+  setup_dnsbl_reply_map
+  setup_proxy_protocol
+  exec postfix start-fg
 }
 
 _main "$@"
