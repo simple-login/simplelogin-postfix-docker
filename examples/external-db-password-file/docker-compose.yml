@@ -28,6 +28,6 @@ services:
     container_name: simplelogin-sut
     # Wait for Postfix to start:
     command: >
-      sh -c 'for i in 1 2 3 4 5 6; do echo QUIT|nc postfix 25|grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10 ; else exit 1 ; fi; done'
+      sh -c 'for i in 1 2 3 4 5 6; do { sleep 2; echo QUIT; } | nc -w 5 postfix 25 | grep "220 .* ESMTP Postfix" && break || if [ "$$i" != 6 ]; then sleep 10 ; else exit 1 ; fi; done'
     depends_on:
       - postfix

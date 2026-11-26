@@ -6,6 +6,8 @@ readonly VALID_COMPATIBILITY_MODES=("v3" "v4")
 # POstfix Custom Data Directory
 readonly DEFAULT_POSTFIX_CUSTOM_DATA_DIRECTORY="/etc/postfix/custom-data"
 
+readonly DEFAULT_POSTFIX_PROXY_PROTOCOL_PORT="10025"
+
 # This function reads the docker secrets based variables defined with pattern *_FILE into the normal variables
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'DB_PASSWORD' 'default_password'
@@ -66,6 +68,27 @@ setup_dnsbl_reply_map () {
   fi
 }
 
+setup_proxy_protocol () {
+  local port="${POSTFIX_PROXY_PROTOCOL_PORT:-${DEFAULT_POSTFIX_PROXY_PROTOCOL_PORT}}"
+
+  if [[ "${ENABLE_PROXY_PROTOCOL,,}" =~ ^(true|1|t)$ ]]; then
+    if ! [[ "${port}" =~ ^[0-9]+$ ]] || (( 10#${port} < 1 || 10#${port} > 65535 )); then
+      echo "Invalid POSTFIX_PROXY_PROTOCOL_PORT: ${port}"
+      exit 1
+    fi
+
+    if (( 10#${port} == 25 )); then
+      echo "POSTFIX_PROXY_PROTOCOL_PORT cannot be 25; port 25 must remain non-PROXY for SimpleLogin."
+      exit 1
+    fi
+
+    postconf -M "${port}/inet=${port} inet n - n - - smtpd"
+    postconf -P "${port}/inet/smtpd_upstream_proxy_protocol=haproxy"
+  elif [[ "${port}" =~ ^[0-9]+$ ]] && (( 10#${port} >= 1 && 10#${port} <= 65535 )) && (( 10#${port} != 25 )); then
+    postconf -MX "${port}/inet" 2>/dev/null || true
+  fi
+}
+
 _main() {
   # Each environment variable that supports the *_FILE pattern needs to be passed into the file_env() function.
   file_env "DB_PASSWORD"
@@ -88,9 +111,9 @@ _main() {
   fi
 
   if [[ -f ${TLS_KEY_FILE} && -f ${TLS_CERT_FILE}  ]]; then
-    python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix start-fg
+    python3 generate_config.py --postfix && setup_dnsbl_reply_map && setup_proxy_protocol && postfix start-fg
   else
-    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && postfix start-fg
+    python3 generate_config.py --certbot && certbot -n certonly; crond && python3 generate_config.py --postfix && setup_dnsbl_reply_map && setup_proxy_protocol && postfix start-fg
   fi
 }
 

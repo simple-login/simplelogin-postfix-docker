@@ -11,7 +11,7 @@ ARG VERSION
 
 LABEL build_version="simplelogin-postfix version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 
-EXPOSE 25 465
+EXPOSE 25 465 10025
 VOLUME /etc/letsencrypt
 
 # Install system dependencies.

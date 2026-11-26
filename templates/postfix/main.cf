@@ -147,8 +147,3 @@ smtp_sasl_tls_security_options = noanonymous
 #smtp_tls_security_level = encrypt
 #header_size_limit = 4096000
 {% endif %}
-
-{% if proxy_protocol %}
-# Enable Proxy Protocol if postfix is behind a reverse proxy that can use Proxy Protocol like traefik or haproxy.
-smtpd_upstream_proxy_protocol = haproxy
-{% endif %}
