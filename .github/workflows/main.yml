@@ -12,15 +12,58 @@ on:
     branches:
       - '*'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  docker:
+  lint:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v6
-      -
-        name: Docker meta
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          config: .hadolint.yaml
+      - name: Check Python syntax
+        run: python3 -m py_compile generate_config.py
+      - name: Lint shell scripts
+        run: shellcheck entrypoint.sh scripts/*.sh tests/*.sh
+      - name: Validate Compose files
+        run: |
+          for compose_file in examples/*/docker-compose.yml; do
+            docker compose -f "$compose_file" config >/dev/null
+          done
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: External database and password-file smoke test
+        run: tests/run-compose-test.sh examples/external-db-password-file/docker-compose.yml sut
+      - name: Custom TLS smoke test
+        run: tests/run-compose-test.sh examples/external-tls-certs/docker-compose.yml sut
+      - name: Proxy protocol and open-relay smoke test
+        run: tests/run-compose-test.sh examples/proxy-protocol/docker-compose.yml sut
+
+  docker:
+    needs:
+      - lint
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
@@ -36,25 +79,23 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha
-      -
-        name: Set up QEMU
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
-      -
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-      -
-        name: Login to DockerHub
+      - name: Login to DockerHub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
-      -
-        name: Build and push
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push
         uses: docker/build-push-action@v7
         with:
-            context: .
-            platforms: linux/amd64,linux/arm64
-            push: ${{ github.event_name != 'pull_request' }}
-            tags: ${{ steps.meta.outputs.tags }}
-            labels: ${{ steps.meta.outputs.labels }}
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
