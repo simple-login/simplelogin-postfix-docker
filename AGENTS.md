@@ -5,14 +5,21 @@ Docker image that runs Postfix for SimpleLogin. No application code: the image e
 ## Commands
 
 - Build: `docker build -t simplelogin/postfix .`
-- Smoke test (de facto integration test, no unit tests): `docker compose -f examples/external-db-password-file/docker-compose.yml up --build --abort-on-container-exit`
+- Smoke test (de facto integration test, no unit tests): `tests/run-compose-test.sh examples/external-db-password-file/docker-compose.yml sut`
   - The `sut` service succeeds only when Postfix answers on port 25 with an ESMTP banner.
-- Proxy smoke test: `docker compose -f examples/proxy-protocol/docker-compose.yml up --build --abort-on-container-exit`
-  - Verifies Traefik -> Postfix PROXY v2 on `10025` and direct `25` with proxy enabled.
-- Dockerfile lint (config present, not run in CI): `hadolint Dockerfile` (`.hadolint.yaml` ignores DL3018 because apk packages are intentionally unpinned).
+- Custom TLS smoke test: `tests/run-compose-test.sh examples/external-tls-certs/docker-compose.yml sut`
+  - Waits for `certgen` and verifies STARTTLS returns a certificate.
+- Proxy smoke test: `tests/run-compose-test.sh examples/proxy-protocol/docker-compose.yml sut`
+  - Verifies Traefik -> Postfix PROXY v2 on `10025`, direct `25`, and open-relay rejection from the untrusted `proxy-net`.
+  - Starts a minimal Postgres service (`examples/proxy-protocol/init.sql`) so the relay rejection is evaluated against a working `relay_domains` lookup.
+- Dockerfile lint: `hadolint Dockerfile` (`.hadolint.yaml` ignores DL3018 because apk packages are intentionally unpinned).
+- Shell lint: `shellcheck entrypoint.sh scripts/*.sh tests/*.sh`
 - Python syntax check: `python3 -m py_compile generate_config.py` (only stdlib + `py3-jinja2`, installed in the image).
+- Compose validation: `docker compose -f examples/<name>/docker-compose.yml config`
 
-CI (`.github/workflows/main.yml`) only builds/pushes the multi-arch image; it runs no tests or lint.
+`tests/run-compose-test.sh` uses `docker compose wait`, so it requires Compose v2.17 or newer.
+
+CI (`.github/workflows/main.yml`) runs lint and the compose smoke tests before building/pushing the multi-arch image.
 
 ## Config generation
 

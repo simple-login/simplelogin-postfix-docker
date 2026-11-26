@@ -17,14 +17,14 @@ VOLUME /etc/letsencrypt
 # Install system dependencies.
 RUN apk add --update --no-cache \
     # Postfix itself and database engines:
-    postfix>=${POSTFIX_VERSION} postfix-pgsql>=${POSTFIX_VERSION} \
+    "postfix>=${POSTFIX_VERSION}" "postfix-pgsql>=${POSTFIX_VERSION}" \
     # CRITICAL FIX: Required for outward SASL relay authentication
     cyrus-sasl cyrus-sasl-login \
     # To generate Postfix config files:
-    python3>=${PYTHON_VERSION} \
+    "python3>=${PYTHON_VERSION}" \
     # To generate and renew Postfix TLS certificate:
-    certbot>=${CERTBOT_VERSION} \
-    dcron>=${DCRON_VERSION} \
+    "certbot>=${CERTBOT_VERSION}" \
+    "dcron>=${DCRON_VERSION}" \
     # Install Python dependencies:
     py3-jinja2 \
     # Install bash:
@@ -41,6 +41,6 @@ COPY entrypoint.sh /src/docker-entrypoint.sh
 WORKDIR /src
 
   # Idea taken from https://github.com/Mailu/Mailu/blob/master/core/postfix/Dockerfile
-HEALTHCHECK --start-period=350s CMD /usr/sbin/postfix status
+HEALTHCHECK --start-period=350s CMD ["/usr/sbin/postfix", "status"]
 
-CMD ["./docker-entrypoint.sh"]
+CMD ["/src/docker-entrypoint.sh"]

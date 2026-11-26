@@ -54,11 +54,11 @@ setup_postfix_custom_data () {
     export POSTFIX_CUSTOM_DATA_DIRECTORY="${DEFAULT_POSTFIX_CUSTOM_DATA_DIRECTORY}";
   fi
 
-  mkdir -p ${POSTFIX_CUSTOM_DATA_DIRECTORY}
+  mkdir -p "${POSTFIX_CUSTOM_DATA_DIRECTORY}"
 
-  if [[ ! -f ${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases ]]; then
-    touch ${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases
-    postalias ${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases
+  if [[ ! -f "${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases" ]]; then
+    touch "${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases"
+    postalias "${POSTFIX_CUSTOM_DATA_DIRECTORY}/aliases"
   fi
 }
 
@@ -104,7 +104,7 @@ _main() {
     # Test that SIMPLELOGIN_COMPATIBILITY_MODE contains a valid value
     if ! contains_element "${SIMPLELOGIN_COMPATIBILITY_MODE}" "${VALID_COMPATIBILITY_MODES[@]}"; then
       echo "Simplelogin Compatibility Mode: ${SIMPLELOGIN_COMPATIBILITY_MODE} is not valid! Valid values are: (${VALID_COMPATIBILITY_MODES[*]})"
-      exit -1
+      exit 1
     else
       echo "Simplelogin Compatibility Mode is set to: ${SIMPLELOGIN_COMPATIBILITY_MODE}"
     fi
